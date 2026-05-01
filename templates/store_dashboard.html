@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ store.name }} - Store Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #0f172a; }
+        .card { background: linear-gradient(135deg, rgba(30,41,59,0.8) 0%, rgba(15,23,42,0.9) 100%); border: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body class="min-h-screen text-white">
+    <!-- Navigation -->
+    <nav class="bg-slate-900/50 border-b border-white/10 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center">
+                    <span class="text-yellow-900 font-bold">CK</span>
+                </div>
+                <div>
+                    <div class="font-semibold">{{ store.name }}</div>
+                    <div class="text-xs text-gray-400">{{ store.location }}</div>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-sm text-gray-400">Manager: {{ store.manager }}</span>
+                <a href="/logout" class="text-sm text-yellow-500 hover:text-yellow-400">Sign Out</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <!-- Today's Summary -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="card rounded-xl p-6">
+                <div class="text-sm text-gray-400 mb-1">Today's Sales</div>
+                <div class="text-2xl font-bold text-green-400">$0</div>
+                <div class="text-xs text-gray-500 mt-1">Not yet entered</div>
+            </div>
+            <div class="card rounded-xl p-6">
+                <div class="text-sm text-gray-400 mb-1">This Week</div>
+                <div class="text-2xl font-bold">${{ "{:,.0f}".format(week_total) if week_total else "0" }}</div>
+                <div class="text-xs text-gray-500 mt-1">7-day total</div>
+            </div>
+            <div class="card rounded-xl p-6">
+                <div class="text-sm text-gray-400 mb-1">Customers</div>
+                <div class="text-2xl font-bold">{{ "{:,}".format(week_customers) if week_customers else "0" }}</div>
+                <div class="text-xs text-gray-500 mt-1">This week</div>
+            </div>
+            <div class="card rounded-xl p-6">
+                <div class="text-sm text-gray-400 mb-1">Avg Check</div>
+                <div class="text-2xl font-bold">${{ "{:.2f}".format(avg_check) if avg_check else "0.00" }}</div>
+                <div class="text-xs text-gray-500 mt-1">Per customer</div>
+            </div>
+        </div>
+
+        <!-- Data Entry Tabs -->
+        <div class="mb-6 border-b border-white/10 pb-2">
+            <div class="flex gap-2 overflow-x-auto">
+                <button onclick="showTab('daily')" class="data-tab active px-4 py-2 text-sm font-medium rounded-lg bg-yellow-500 text-yellow-900 whitespace-nowrap" data-tab="daily">Daily Log</button>
+                <button onclick="showTab('cash')" class="data-tab px-4 py-2 text-sm font-medium rounded-lg bg-slate-800 text-gray-400 hover:text-white whitespace-nowrap" data-tab="cash">Cash Report</button>
+                <button onclick="showTab('schedule')" class="data-tab px-4 py-2 text-sm font-medium rounded-lg bg-slate-800 text-gray-400 hover:text-white whitespace-nowrap" data-tab="schedule">Schedule</button>
+                <button onclick="showTab('payroll')" class="data-tab px-4 py-2 text-sm font-medium rounded-lg bg-slate-800 text-gray-400 hover:text-white whitespace-nowrap" data-tab="payroll">Payroll</button>
+                <button onclick="showTab('labor')" class="data-tab px-4 py-2 text-sm font-medium rounded-lg bg-slate-800 text-gray-400 hover:text-white whitespace-nowrap" data-tab="labor">Labor Cost</button>
+                <button onclick="showTab('food')" class="data-tab px-4 py-2 text-sm font-medium rounded-lg bg-slate-800 text-gray-400 hover:text-white whitespace-nowrap" data-tab="food">Food Cost</button>
+                <button onclick="showTab('invoices')" class="data-tab px-4 py-2 text-sm font-medium rounded-lg bg-slate-800 text-gray-400 hover:text-white whitespace-nowrap" data-tab="invoices">Invoices</button>
+                <button onclick="showTab('manager')" class="data-tab px-4 py-2 text-sm font-medium rounded-lg bg-slate-800 text-gray-400 hover:text-white whitespace-nowrap" data-tab="manager">Manager Log</button>
+            </div>
+        </div>
+
+        <!-- Daily Log Tab -->
+        <div id="tab-daily" class="data-content">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Data Entry Form -->
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-lg font-semibold mb-4">Enter Daily Data</h2>
+
+                    {% if today_data %}
+                    <div class="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-3 mb-4 text-sm">
+                        <span class="text-yellow-500">Data already entered for today.</span>
+                        <span class="text-gray-400">Submitting will update the existing record.</span>
+                    </div>
+                    {% endif %}
+
+                    <form method="POST" action="/store/upload" class="space-y-4">
+                        <input type="hidden" name="date" value="{{ today }}">
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-2">Sales ($)</label>
+                                <input type="number" name="sales" step="0.01" required
+                                       value="{{ today_data.sales if today_data else '' }}"
+                                       class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:border-yellow-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-2">Customers</label>
+                                <input type="number" name="customers" required
+                                       value="{{ today_data.customers if today_data else '' }}"
+                                       class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:border-yellow-500">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-2">Food Cost ($)</label>
+                                <input type="number" name="food_cost" step="0.01" required
+                                       value="{{ today_data.food_cost if today_data else '' }}"
+                                       class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:border-yellow-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-2">Labor Cost ($)</label>
+                                <input type="number" name="labor_cost" step="0.01" required
+                                       value="{{ today_data.labor_cost if today_data else '' }}"
+                                       class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:border-yellow-500">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">Notes (optional)</label>
+                            <textarea name="notes" rows="2"
+                                      class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:border-yellow-500 resize-none"
+                                      placeholder="Any notable events..."></textarea>
+                        </div>
+
+                        <button type="submit"
+                                class="w-full bg-yellow-500 hover:bg-yellow-400 text-yellow-900 font-semibold py-3 rounded-lg transition-colors">
+                            {% if today_data %}Update Today's Data{% else %}Submit Today's Data{% endif %}
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Recent Entries -->
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-lg font-semibold mb-4">Recent Entries</h2>
+
+                    {% if recent_data %}
+                    <div class="space-y-3 max-h-96 overflow-y-auto">
+                        {% for entry in recent_data %}
+                        <div class="bg-slate-800/50 rounded-lg p-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="font-medium">{{ entry.date }}</div>
+                                <div class="text-green-400 font-semibold">${{ "{:,.2f}".format(entry.sales) }}</div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2 text-sm text-gray-400">
+                                <div>Food: ${{ "{:,.0f}".format(entry.food_cost) }}</div>
+                                <div>Labor: ${{ "{:,.0f}".format(entry.labor_cost) }}</div>
+                                <div>{{ entry.customers }} customers</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-8 text-gray-500">
+                        <p>No data entries yet.</p>
+                        <p class="text-sm">Start by entering today's numbers above.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Sales Chart -->
+            <div class="card rounded-xl p-6 mt-8">
+                <h2 class="text-lg font-semibold mb-4">Sales Trend (Last 7 Days)</h2>
+                <div class="h-64">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Placeholder tabs for other categories -->
+        <div id="tab-cash" class="data-content hidden">
+            <div class="card rounded-xl p-6">
+                <h2 class="text-lg font-semibold mb-4">Cash Report</h2>
+                <p class="text-gray-400 mb-4">Enter daily cash reconciliation data.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Opening Cash</label>
+                        <input type="number" step="0.01" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3" placeholder="$0.00">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Cash Sales</label>
+                        <input type="number" step="0.01" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3" placeholder="$0.00">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Closing Cash</label>
+                        <input type="number" step="0.01" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3" placeholder="$0.00">
+                    </div>
+                </div>
+                <button class="mt-4 bg-yellow-500 hover:bg-yellow-400 text-yellow-900 font-semibold px-6 py-2 rounded-lg">Save Cash Report</button>
+            </div>
+        </div>
+
+        <div id="tab-schedule" class="data-content hidden">
+            <div class="card rounded-xl p-6">
+                <h2 class="text-lg font-semibold mb-4">Employee Schedule</h2>
+                <p class="text-gray-400 mb-4">Upload or enter weekly employee schedules.</p>
+                <div class="border-2 border-dashed border-slate-700 rounded-lg p-8 text-center">
+                    <p class="text-gray-400 mb-2">Upload schedule file (CSV/Excel)</p>
+                    <button class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg">Choose File</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-payroll" class="data-content hidden">
+            <div class="card rounded-xl p-6">
+                <h2 class="text-lg font-semibold mb-4">Payroll</h2>
+                <p class="text-gray-400 mb-4">Track employee hours and payroll data.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Total Hours</label>
+                        <input type="number" step="0.5" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Total Payroll ($)</label>
+                        <input type="number" step="0.01" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3" placeholder="$0.00">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-labor" class="data-content hidden">
+            <div class="card rounded-xl p-6">
+                <h2 class="text-lg font-semibold mb-4">Labor Projection & Cost</h2>
+                <p class="text-gray-400 mb-4">Project labor needs and track actual costs.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-sm font-medium mb-3">Projections</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-2">Projected Hours</label>
+                                <input type="number" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-2">Projected Cost</label>
+                                <input type="number" step="0.01" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2">
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium mb-3">Actual</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-2">Actual Hours</label>
+                                <input type="number" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-2">Actual Cost</label>
+                                <input type="number" step="0.01" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-food" class="data-content hidden">
+            <div class="card rounded-xl p-6">
+                <h2 class="text-lg font-semibold mb-4">Food Cost</h2>
+                <p class="text-gray-400 mb-4">Track food costs and cost percentages.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Food Purchases ($)</label>
+                        <input type="number" step="0.01" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Beginning Inventory ($)</label>
+                        <input type="number" step="0.01" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">Ending Inventory ($)</label>
+                        <input type="number" step="0.01" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-invoices" class="data-content hidden">
+            <div class="card rounded-xl p-6">
+                <h2 class="text-lg font-semibold mb-4">Invoices & Purchases</h2>
+                <p class="text-gray-400 mb-4">Track vendor invoices and purchases.</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-gray-400 border-b border-white/10">
+                                <th class="text-left py-2">Date</th>
+                                <th class="text-left py-2">Vendor</th>
+                                <th class="text-left py-2">Description</th>
+                                <th class="text-right py-2">Amount</th>
+                                <th class="text-left py-2">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-white/5">
+                                <td class="py-2">--</td>
+                                <td class="py-2">--</td>
+                                <td class="py-2">--</td>
+                                <td class="text-right py-2">--</td>
+                                <td class="py-2">--</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <button class="mt-4 bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg text-sm">+ Add Invoice</button>
+            </div>
+        </div>
+
+        <div id="tab-manager" class="data-content hidden">
+            <div class="card rounded-xl p-6">
+                <h2 class="text-lg font-semibold mb-4">Manager Log</h2>
+                <p class="text-gray-400 mb-4">Daily notes and observations for management.</p>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Notes</label>
+                    <textarea rows="6" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 resize-none" placeholder="Enter management notes, issues, observations..."></textarea>
+                </div>
+                <button class="mt-4 bg-yellow-500 hover:bg-yellow-400 text-yellow-900 font-semibold px-6 py-2 rounded-lg">Save Log</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function showTab(tabName) {
+            document.querySelectorAll('.data-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.data-tab').forEach(el => {
+                el.classList.remove('bg-yellow-500', 'text-yellow-900');
+                el.classList.add('bg-slate-800', 'text-gray-400');
+            });
+            document.getElementById('tab-' + tabName).classList.remove('hidden');
+            document.querySelector('[data-tab="' + tabName + '"]').classList.remove('bg-slate-800', 'text-gray-400');
+            document.querySelector('[data-tab="' + tabName + '"]').classList.add('bg-yellow-500', 'text-yellow-900');
+        }
+
+        // Sales chart
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        const salesData = {{ recent_data | tojson | safe }};
+
+        const labels = salesData.reverse().map(d => {
+            const date = new Date(d.date);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        });
+        const values = salesData.map(d => d.sales);
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels.length ? labels : ['No data'],
+                datasets: [{
+                    label: 'Daily Sales',
+                    data: values.length ? values : [0],
+                    borderColor: '#eab308',
+                    backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: { color: '#94a3b8', callback: v => '$' + v.toLocaleString() }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8' }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catfish King - Corporate Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #0f172a; }
+        .card { background: linear-gradient(135deg, rgba(30,41,59,0.8) 0%, rgba(15,23,42,0.9) 100%); border: 1px solid rgba(255,255,255,0.1); }
+        .positive { color: #22c55e; }
+        .negative { color: #ef4444; }
+    </style>
+</head>
+<body class="min-h-screen text-white">
+    <!-- Navigation -->
+    <nav class="bg-slate-900/50 border-b border-white/10 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center">
+                    <span class="text-yellow-900 font-bold">CK</span>
+                </div>
+                <div>
+                    <div class="font-semibold">Catfish King</div>
+                    <div class="text-xs text-gray-400">Corporate Dashboard</div>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-sm text-gray-400">{{ stores|length }} locations</span>
+                <a href="/logout" class="text-sm text-yellow-500 hover:text-yellow-400">Sign Out</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <!-- Header Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="card rounded-xl p-6">
+                <div class="text-sm text-gray-400 mb-1">Total Sales (30 days)</div>
+                <div class="text-3xl font-bold">${{ "{:,.0f}".format(total_sales) if total_sales else "0" }}</div>
+            </div>
+            <div class="card rounded-xl p-6">
+                <div class="text-sm text-gray-400 mb-1">Avg Daily Sales</div>
+                <div class="text-3xl font-bold">${{ "{:,.0f}".format(avg_daily) if avg_daily else "0" }}</div>
+            </div>
+            <div class="card rounded-xl p-6">
+                <div class="text-sm text-gray-400 mb-1">Total Customers</div>
+                <div class="text-3xl font-bold">{{ "{:,}".format(total_customers) if total_customers else "0" }}</div>
+            </div>
+            <div class="card rounded-xl p-6">
+                <div class="text-sm text-gray-400 mb-1">Top Store</div>
+                <div class="text-xl font-bold truncate">{{ top_store if top_store else "-" }}</div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex gap-2 mb-6 border-b border-white/10 pb-4">
+            <button onclick="showTab('overview')" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg bg-yellow-500 text-yellow-900" data-tab="overview">
+                Overview
+            </button>
+            <button onclick="showTab('comparison')" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg bg-slate-800 text-gray-400 hover:text-white" data-tab="comparison">
+                Store Comparison
+            </button>
+            <button onclick="showTab('products')" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg bg-slate-800 text-gray-400 hover:text-white" data-tab="products">
+                Product Prices
+            </button>
+        </div>
+
+        <!-- Overview Tab -->
+        <div id="overview-tab" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Sales Chart -->
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-lg font-semibold mb-4">Daily Sales (Last 14 Days)</h2>
+                    <div class="h-72">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Top Performers -->
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-lg font-semibold mb-4">Top Performing Stores</h2>
+                    <div class="space-y-3">
+                        {% for store in store_summary[:5] %}
+                        <div class="flex justify-between items-center bg-slate-800/50 rounded-lg p-3">
+                            <div>
+                                <div class="font-medium">{{ store.store_name }}</div>
+                                <div class="text-xs text-gray-500">{{ store.location }}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-green-400 font-semibold">${{ "{:,.0f}".format(store.total_sales) }}</div>
+                                <div class="text-xs text-gray-500">{{ "{:,}".format(store.total_customers) }} customers</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Stores Grid -->
+            <div class="card rounded-xl p-6 mt-8">
+                <h2 class="text-lg font-semibold mb-4">All Stores - Last 30 Days</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-gray-400 border-b border-white/10">
+                                <th class="text-left py-3 px-2">Store</th>
+                                <th class="text-right py-3 px-2">Total Sales</th>
+                                <th class="text-right py-3 px-2">Avg Daily</th>
+                                <th class="text-right py-3 px-2">Customers</th>
+                                <th class="text-right py-3 px-2">Avg Check</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for store in store_summary %}
+                            <tr class="border-b border-white/5 hover:bg-white/5">
+                                <td class="py-3 px-2">
+                                    <div class="font-medium">{{ store.store_name }}</div>
+                                </td>
+                                <td class="text-right py-3 px-2 text-green-400">${{ "{:,.0f}".format(store.total_sales) }}</td>
+                                <td class="text-right py-3 px-2">${{ "{:,.0f}".format(store.avg_sales) }}</td>
+                                <td class="text-right py-3 px-2">{{ "{:,}".format(store.total_customers) }}</td>
+                                <td class="text-right py-3 px-2">${{ "{:.2f}".format(store.total_sales / store.total_customers) if store.total_customers > 0 else "0.00" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparison Tab -->
+        <div id="comparison-tab" class="tab-content hidden">
+            <div class="card rounded-xl p-6">
+                <h2 class="text-lg font-semibold mb-4">Week Over Week Comparison</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-gray-400 border-b border-white/10">
+                                <th class="text-left py-3 px-2">Store</th>
+                                <th class="text-right py-3 px-2">This Week</th>
+                                <th class="text-right py-3 px-2">Last Week</th>
+                                <th class="text-right py-3 px-2">Change</th>
+                                <th class="text-right py-3 px-2">Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in week_comparison %}
+                            <tr class="border-b border-white/5">
+                                {% set change = ((row.this_week - row.last_week) / row.last_week * 100) if row.last_week > 0 else 0 %}
+                                <td class="py-3 px-2 font-medium">{{ row.store_name }}</td>
+                                <td class="text-right py-3 px-2">${{ "{:,.0f}".format(row.this_week) }}</td>
+                                <td class="text-right py-3 px-2">${{ "{:,.0f}".format(row.last_week) }}</td>
+                                <td class="text-right py-3 px-2 {% if change >= 0 %}positive{% else %}negative{% endif %}">
+                                    {{ "%.1f"|format(change) }}%
+                                </td>
+                                <td class="text-right py-3 px-2">
+                                    {% if change >= 5 %}
+                                    <span class="text-green-400">Strong</span>
+                                    {% elif change >= 0 %}
+                                    <span class="text-yellow-400">Stable</span>
+                                    {% else %}
+                                    <span class="text-red-400">Down</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Comparison Chart -->
+            <div class="card rounded-xl p-6 mt-8">
+                <h2 class="text-lg font-semibold mb-4">Store Comparison Chart</h2>
+                <div class="h-80">
+                    <canvas id="comparisonChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Tab -->
+        <div id="products-tab" class="tab-content hidden">
+            <div class="card rounded-xl p-6">
+                <h2 class="text-lg font-semibold mb-2">Product Price Comparison</h2>
+                <p class="text-sm text-gray-400 mb-6">Compare product costs across all stores to identify savings opportunities.</p>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-gray-400 border-b border-white/10">
+                                <th class="text-left py-3 px-2">Product</th>
+                                <th class="text-left py-3 px-2">Unit</th>
+                                <th class="text-right py-3 px-2">Lowest</th>
+                                <th class="text-right py-3 px-2">Highest</th>
+                                <th class="text-right py-3 px-2">Average</th>
+                                <th class="text-right py-3 px-2">Potential Savings</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in product_comparison %}
+                            {% set savings = (product.max_price - product.min_price) * 100 %}
+                            <tr class="border-b border-white/5">
+                                <td class="py-3 px-2 font-medium">{{ product.product_name }}</td>
+                                <td class="py-3 px-2 text-gray-400">{{ product.unit }}</td>
+                                <td class="text-right py-3 px-2 text-green-400">${{ "%.2f"|format(product.min_price) }}</td>
+                                <td class="text-right py-3 px-2 text-red-400">${{ "%.2f"|format(product.max_price) }}</td>
+                                <td class="text-right py-3 px-2">${{ "%.2f"|format(product.avg_price) }}</td>
+                                <td class="text-right py-3 px-2">
+                                    {% if savings > 0 %}
+                                    <span class="text-yellow-400">${{ "%.2f"|format(savings) }}/100 units</span>
+                                    {% else %}
+                                    <span class="text-gray-500">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Product Price Chart -->
+            <div class="card rounded-xl p-6 mt-8">
+                <h2 class="text-lg font-semibold mb-4">Price Variance by Product</h2>
+                <div class="h-72">
+                    <canvas id="productChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('bg-yellow-500', 'text-yellow-900');
+                el.classList.add('bg-slate-800', 'text-gray-400');
+            });
+            document.getElementById(tabName + '-tab').classList.remove('hidden');
+            document.querySelector('[data-tab="' + tabName + '"]').classList.remove('bg-slate-800', 'text-gray-400');
+            document.querySelector('[data-tab="' + tabName + '"]').classList.add('bg-yellow-500', 'text-yellow-900');
+        }
+
+        // Sales chart
+        const salesCtx = document.getElementById('salesChart').getContext('2d');
+        const dailyData = {{ daily_totals | tojson | safe }};
+
+        new Chart(salesCtx, {
+            type: 'line',
+            data: {
+                labels: dailyData.map(d => {
+                    const date = new Date(d.date);
+                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                }),
+                datasets: [{
+                    label: 'Total Sales',
+                    data: dailyData.map(d => d.total_sales),
+                    borderColor: '#eab308',
+                    backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: { color: '#94a3b8', callback: v => '$' + (v/1000).toFixed(0) + 'K' }
+                    },
+                    x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                }
+            }
+        });
+
+        // Comparison chart
+        const compCtx = document.getElementById('comparisonChart').getContext('2d');
+        const compData = {{ week_comparison | tojson | safe }};
+
+        new Chart(compCtx, {
+            type: 'bar',
+            data: {
+                labels: compData.map(d => d.store_name.replace('Catfish King - ', '')),
+                datasets: [
+                    {
+                        label: 'This Week',
+                        data: compData.map(d => d.this_week),
+                        backgroundColor: '#eab308'
+                    },
+                    {
+                        label: 'Last Week',
+                        data: compData.map(d => d.last_week),
+                        backgroundColor: '#475569'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#94a3b8' } } },
+                scales: {
+                    y: {
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: { color: '#94a3b8', callback: v => '$' + (v/1000).toFixed(0) + 'K' }
+                    },
+                    x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                }
+            }
+        });
+
+        // Product chart
+        const prodCtx = document.getElementById('productChart').getContext('2d');
+        const prodData = {{ product_comparison | tojson | safe }};
+
+        new Chart(prodCtx, {
+            type: 'bar',
+            data: {
+                labels: prodData.map(d => d.product_name),
+                datasets: [{
+                    label: 'Price Range',
+                    data: prodData.map(d => d.max_price - d.min_price),
+                    backgroundColor: '#f59e0b'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: { color: '#94a3b8', callback: v => '$' + v.toFixed(2) }
+                    },
+                    x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
