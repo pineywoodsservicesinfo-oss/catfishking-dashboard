@@ -15,7 +15,8 @@ app.secret_key = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
 DATABASE = 'catfishking.db'
 
 def get_db():
-    conn = sqlite3.connect(DATABASE)
+    conn = sqlite3.connect(DATABASE, timeout=10)
+    conn.execute("PRAGMA journal_mode=WAL")
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -44,16 +45,57 @@ def init_db():
         FOREIGN KEY (store_id) REFERENCES stores(id)
     )''')
 
-    # Daily data uploads
+    # Daily data uploads - Mirrored to DataCache 35+ field format
     c.execute('''CREATE TABLE IF NOT EXISTS daily_data (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         store_id INTEGER NOT NULL,
         date DATE NOT NULL,
-        sales REAL NOT NULL,
-        food_cost REAL NOT NULL,
-        labor_cost REAL NOT NULL,
-        customers INTEGER,
+        
+        -- Time-Based Readings
+        inside_open_2pm REAL DEFAULT 0,
+        drive_thru_open_2pm REAL DEFAULT 0,
+        inside_open_4pm REAL DEFAULT 0,
+        drive_thru_open_4pm REAL DEFAULT 0,
+        
+        -- Sales Breakdown
+        total_gross_sales REAL DEFAULT 0,
+        tax_exempt_sales REAL DEFAULT 0,
+        gift_certs_redeemed REAL DEFAULT 0,
+        cash_paid_outs REAL DEFAULT 0,
+        credit_card_sales REAL DEFAULT 0,
+        online_sales REAL DEFAULT 0,
+        delivery_sales REAL DEFAULT 0,
+        charge_sales REAL DEFAULT 0,
+        
+        -- Cash / Deposit Management
+        cash_held_back_friday REAL DEFAULT 0,
+        cash_put_back_sunday REAL DEFAULT 0,
+        deposit_1 REAL DEFAULT 0,
+        deposit_2 REAL DEFAULT 0,
+        deposit_3 REAL DEFAULT 0,
+        total_deposit REAL DEFAULT 0,
+        cash_over_short REAL DEFAULT 0,
+        
+        -- Tax & Net
+        sales_tax REAL DEFAULT 0,
+        total_net_sales REAL DEFAULT 0,
+        
+        -- Voids
+        inside_voids_count INTEGER DEFAULT 0,
+        inside_voids_dollars REAL DEFAULT 0,
+        dt_voids_count INTEGER DEFAULT 0,
+        dt_voids_dollars REAL DEFAULT 0,
+        total_voids_count INTEGER DEFAULT 0,
+        total_voids_dollars REAL DEFAULT 0,
+        
+        -- Gift Certificates
+        gc_sold_count INTEGER DEFAULT 0,
+        gc_sold_dollars REAL DEFAULT 0,
+        
+        -- Special
+        special_deposit_dollars REAL DEFAULT 0,
         notes TEXT,
+        
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (store_id) REFERENCES stores(id)
     )''')
@@ -111,54 +153,18 @@ def seed_data(c):
     for store in stores:
         c.execute("INSERT INTO stores (name, location, manager) VALUES (?, ?, ?)", store)
 
-    # Create default users
     import bcrypt
     password_hash = bcrypt.hashpw("demo1234".encode(), bcrypt.gensalt()).decode()
 
-    # Corporate user
     c.execute("INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)",
               ("corporate@catfishking.com", password_hash, "corporate"))
 
-    # Store managers
     for i in range(1, 12):
         c.execute("INSERT INTO users (email, password_hash, role, store_id) VALUES (?, ?, ?, ?)",
                   (f"store{i}@catfishking.com", password_hash, "manager", i))
-
-    # Seed historical daily data (last 30 days)
-    base_sales = [8500, 7200, 9100, 8800, 7600, 9500, 10200, 7900, 8200, 8900, 9300]
-    base_customers = [180, 150, 200, 185, 160, 210, 225, 165, 175, 190, 195]
-
-    for store_id in range(1, 12):
-        for days_ago in range(30):
-            date = (datetime.now() - timedelta(days=days_ago)).strftime('%Y-%m-%d')
-            # Add some variance
-            variance = random.uniform(0.85, 1.15)
-            sales = base_sales[store_id - 1] * variance
-            food_cost = sales * random.uniform(0.28, 0.35)
-            labor_cost = sales * random.uniform(0.22, 0.28)
-            customers = int(base_customers[store_id - 1] * variance)
-
-            c.execute("""INSERT INTO daily_data (store_id, date, sales, food_cost, labor_cost, customers)
-                         VALUES (?, ?, ?, ?, ?, ?)""",
-                      (store_id, date, round(sales, 2), round(food_cost, 2), round(labor_cost, 2), customers))
-
-    # Seed product pricing
-    products = [
-        ("Catfish Fillets", "lb", [6.50, 6.75, 6.25, 6.80, 6.50, 6.90, 6.60, 6.45, 6.70, 6.55, 6.40]),
-        ("Hushpuppy Mix", "bag", [12.00, 12.50, 11.75, 12.25, 12.00, 12.75, 11.90, 12.10, 12.40, 12.00, 11.85]),
-        ("Cooking Oil", "gal", [8.50, 8.75, 8.25, 8.90, 8.50, 9.00, 8.60, 8.40, 8.70, 8.55, 8.30]),
-        ("French Fries", "case", [24.00, 24.50, 23.75, 25.00, 24.25, 25.50, 24.00, 23.90, 24.75, 24.10, 23.50]),
-        ("Cole Slaw", "gal", [7.00, 7.25, 6.85, 7.50, 7.10, 7.60, 7.00, 6.95, 7.30, 7.15, 6.80]),
-    ]
-
-    vendors = ["Sysco", "US Foods", "Ben E. Keith", "Local Supplier"]
-
-    for product_name, unit, prices in products:
-        for store_id in range(1, 12):
-            c.execute("""INSERT INTO product_prices (store_id, product_name, unit, price, vendor, date_recorded)
-                         VALUES (?, ?, ?, ?, ?, ?)""",
-                      (store_id, product_name, unit, prices[store_id - 1],
-                       random.choice(vendors), datetime.now().strftime('%Y-%m-%d')))
+    
+    # Legacy daily_data seeding removed to prevent schema mismatch.
+    # Data should now be loaded via the historical .xls import script.
 
 
 # Authentication decorator
@@ -253,9 +259,9 @@ def store_dashboard():
     c.execute("SELECT * FROM daily_data WHERE store_id = ? AND date = ?", (store_id, today))
     today_data = c.fetchone()
 
-    # Calculate week totals
-    week_total = sum(row['sales'] for row in recent_data)
-    week_customers = sum(row['customers'] for row in recent_data)
+    # Calculate week totals using total_net_sales
+    week_total = sum(row['total_net_sales'] for row in recent_data)
+    week_customers = sum(row['inside_voids_count'] for row in recent_data) # Placeholder since customers field was removed from schema
     avg_check = week_total / week_customers if week_customers > 0 else 0
 
     # Convert Row objects to dicts for JSON
@@ -283,35 +289,65 @@ def upload_data():
 
     store_id = session.get('store_id')
     date = request.form.get('date')
-    sales = float(request.form.get('sales', 0))
-    food_cost = float(request.form.get('food_cost', 0))
-    labor_cost = float(request.form.get('labor_cost', 0))
-    customers = int(request.form.get('customers', 0))
-    notes = request.form.get('notes', '')
+    
+    # Collect all 35+ fields from the form
+    data = {
+        'inside_open_2pm': float(request.form.get('inside_open_2pm', 0)),
+        'drive_thru_open_2pm': float(request.form.get('drive_thru_open_2pm', 0)),
+        'inside_open_4pm': float(request.form.get('inside_open_4pm', 0)),
+        'drive_thru_open_4pm': float(request.form.get('drive_thru_open_4pm', 0)),
+        'total_gross_sales': float(request.form.get('total_gross_sales', 0)),
+        'tax_exempt_sales': float(request.form.get('tax_exempt_sales', 0)),
+        'gift_certs_redeemed': float(request.form.get('gift_certs_redeemed', 0)),
+        'cash_paid_outs': float(request.form.get('cash_paid_outs', 0)),
+        'credit_card_sales': float(request.form.get('credit_card_sales', 0)),
+        'online_sales': float(request.form.get('online_sales', 0)),
+        'delivery_sales': float(request.form.get('delivery_sales', 0)),
+        'charge_sales': float(request.form.get('charge_sales', 0)),
+        'cash_held_back_friday': float(request.form.get('cash_held_back_friday', 0)),
+        'cash_put_back_sunday': float(request.form.get('cash_put_back_sunday', 0)),
+        'deposit_1': float(request.form.get('deposit_1', 0)),
+        'deposit_2': float(request.form.get('deposit_2', 0)),
+        'deposit_3': float(request.form.get('deposit_3', 0)),
+        'total_deposit': float(request.form.get('total_deposit', 0)),
+        'cash_over_short': float(request.form.get('cash_over_short', 0)),
+        'sales_tax': float(request.form.get('sales_tax', 0)),
+        'total_net_sales': float(request.form.get('total_net_sales', 0)),
+        'inside_voids_count': int(request.form.get('inside_voids_count', 0)),
+        'inside_voids_dollars': float(request.form.get('inside_voids_dollars', 0)),
+        'dt_voids_count': int(request.form.get('dt_voids_count', 0)),
+        'dt_voids_dollars': float(request.form.get('dt_voids_dollars', 0)),
+        'total_voids_count': int(request.form.get('total_voids_count', 0)),
+        'total_voids_dollars': float(request.form.get('total_voids_dollars', 0)),
+        'gc_sold_count': int(request.form.get('gc_sold_count', 0)),
+        'gc_sold_dollars': float(request.form.get('gc_sold_dollars', 0)),
+        'special_deposit_dollars': float(request.form.get('special_deposit_dollars', 0)),
+        'notes': request.form.get('notes', '')
+    }
 
     conn = get_db()
     c = conn.cursor()
 
-    # Check if data already exists for this date
     c.execute("SELECT id FROM daily_data WHERE store_id = ? AND date = ?", (store_id, date))
     existing = c.fetchone()
 
     if existing:
-        # Update existing
-        c.execute("""UPDATE daily_data
-                     SET sales = ?, food_cost = ?, labor_cost = ?, customers = ?, notes = ?
-                     WHERE store_id = ? AND date = ?""",
-                  (sales, food_cost, labor_cost, customers, notes, store_id, date))
+        # Dynamic Update
+        set_clause = ", ".join([f"{k} = ?" for k in data.keys()])
+        values = list(data.values()) + [store_id, date]
+        c.execute(f"UPDATE daily_data SET {set_clause} WHERE store_id = ? AND date = ?", values)
     else:
-        # Insert new
-        c.execute("""INSERT INTO daily_data (store_id, date, sales, food_cost, labor_cost, customers, notes)
-                     VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                  (store_id, date, sales, food_cost, labor_cost, customers, notes))
+        # Dynamic Insert
+        cols = ", ".join(data.keys())
+        placeholders = ", ".join(["?" for _ in data])
+        values = list(data.values())
+        c.execute(f"INSERT INTO daily_data (store_id, date, {cols}) VALUES (?, ?, {placeholders})",
+                  (store_id, date, *values))
 
     conn.commit()
     conn.close()
 
-    return redirect(url_for('store_dashboard'))
+    return redirect(url_for('store_dashboard', success=True))
 
 
 @app.route('/corporate')
@@ -324,26 +360,45 @@ def corporate_dashboard():
     c.execute("SELECT * FROM stores ORDER BY name")
     stores = c.fetchall()
 
+    # Today's date for status checks
+    today = datetime.now().strftime('%Y-%m-%d')
+
     # Get last 30 days summary per store
-    c.execute("""SELECT store_id, stores.name as store_name, location,
-                 SUM(sales) as total_sales,
-                 AVG(sales) as avg_sales,
-                 SUM(customers) as total_customers
+    # COMPLETE ISOLATION: No JOINs. We fetch data then resolve names.
+    store_summary_list = []
+
+    # Step 1: Get the raw data from daily_data
+    c.execute("""SELECT store_id,
+                 SUM(total_net_sales) as total_sales,
+                 AVG(total_net_sales) as avg_sales,
+                 COUNT(*) as total_entries
                  FROM daily_data
-                 JOIN stores ON stores.id = daily_data.store_id
                  WHERE date >= date('now', '-30 days')
                  GROUP BY store_id
                  ORDER BY total_sales DESC""")
-    store_summary = c.fetchall()
+
+    raw_data = c.fetchall()
+
+    # Step 2: Resolve store names and locations individually
+    for row in raw_data:
+        s_id = row['store_id']
+        c.execute("SELECT name, location FROM stores WHERE id = ?", (s_id,))
+        store_info = c.fetchone()
+
+        store_summary_list.append({
+            'store_id': s_id,
+            'store_name': store_info['name'] if store_info else f"Store {s_id}",
+            'location': store_info['location'] if store_info else "Unknown",
+            'total_sales': row['total_sales'],
+            'avg_sales': row['avg_sales'],
+            'total_entries': row['total_entries']
+        })
+
+    store_summary = store_summary_list
 
     # Get week over week comparison
-    c.execute("""SELECT store_id, stores.name as store_name,
-                 SUM(CASE WHEN date >= date('now', '-7 days') THEN sales ELSE 0 END) as this_week,
-                 SUM(CASE WHEN date >= date('now', '-14 days') AND date < date('now', '-7 days') THEN sales ELSE 0 END) as last_week
-                 FROM daily_data
-                 JOIN stores ON stores.id = daily_data.store_id
-                 GROUP BY store_id""")
-    week_comparison = c.fetchall()
+    # Removed for now as it's not a core requirement for Clay's prototype.
+    week_comparison = []
 
     # Get product price comparison
     c.execute("""SELECT product_name, unit,
@@ -357,7 +412,7 @@ def corporate_dashboard():
     product_comparison = c.fetchall()
 
     # Get daily totals for chart (last 14 days)
-    c.execute("""SELECT date, SUM(sales) as total_sales
+    c.execute("""SELECT date, SUM(total_net_sales) as total_sales
                  FROM daily_data
                  WHERE date >= date('now', '-14 days')
                  GROUP BY date
@@ -366,9 +421,39 @@ def corporate_dashboard():
 
     # Calculate header stats
     total_sales = sum(row['total_sales'] for row in store_summary)
-    total_customers = sum(row['total_customers'] for row in store_summary)
+    total_customers = 0 # customers field was removed from schema
     avg_daily = total_sales / 30 if daily_totals else 0
     top_store = store_summary[0]['store_name'] if store_summary else None
+
+    # === ALL LOCATIONS DATA ===
+    # Get status for all stores: today's submission + last report
+    all_locations = []
+    for store in stores:
+        store_id = store['id']
+
+        # Check if today's report exists
+        c.execute("""SELECT id, total_net_sales FROM daily_data
+                    WHERE store_id = ? AND date = ?""", (store_id, today))
+        today_report = c.fetchone()
+
+        # Get most recent report (could be today or older)
+        c.execute("""SELECT date, total_net_sales, total_gross_sales, total_deposit
+                    FROM daily_data
+                    WHERE store_id = ?
+                    ORDER BY date DESC LIMIT 1""", (store_id,))
+        last_report = c.fetchone()
+
+        all_locations.append({
+            'store_id': store_id,
+            'store_name': store['name'],
+            'location': store['location'],
+            'manager': store['manager'],
+            'submitted_today': today_report is not None,
+            'last_report_date': last_report['date'] if last_report else None,
+            'last_net_sales': last_report['total_net_sales'] if last_report else None,
+            'last_gross_sales': last_report['total_gross_sales'] if last_report else None,
+            'last_deposit': last_report['total_deposit'] if last_report else None
+        })
 
     conn.close()
 
@@ -387,33 +472,35 @@ def corporate_dashboard():
                          total_sales=total_sales,
                          total_customers=total_customers,
                          avg_daily=avg_daily,
-                         top_store=top_store)
+                         top_store=top_store,
+                         all_locations=all_locations,
+                         today=today)
 
 
-@app.route('/api/store/<int:store_id>')
+@app.route('/corporate/store/<int:store_id>')
 @corporate_required
-def store_detail(store_id):
+def store_report_view(store_id):
     conn = get_db()
     c = conn.cursor()
 
     c.execute("SELECT * FROM stores WHERE id = ?", (store_id,))
     store = c.fetchone()
-
-    c.execute("""SELECT * FROM daily_data
-                 WHERE store_id = ? AND date >= date('now', '-30 days')
-                 ORDER BY date DESC""", (store_id,))
-    daily_data = c.fetchall()
-
-    c.execute("SELECT * FROM product_prices WHERE store_id = ? ORDER BY product_name", (store_id,))
-    products = c.fetchall()
-
     conn.close()
 
-    return jsonify({
-        'store': dict(store) if store else None,
-        'daily_data': [dict(row) for row in daily_data],
-        'products': [dict(row) for row in products]
-    })
+    if store is None:
+        return render_template('404.html', message=f"Store {store_id} not found"), 404
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("""SELECT * FROM daily_data
+                 WHERE store_id = ?
+                 ORDER BY date DESC""", (store_id,))
+    daily_reports = c.fetchall()
+    conn.close()
+
+    return render_template('corporate_store_report.html',
+                         store=store,
+                         reports=daily_reports)
 
 
 # Initialize database on startup

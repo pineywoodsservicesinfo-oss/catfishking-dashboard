@@ -47,7 +47,7 @@
             </div>
             <div class="card rounded-xl p-6">
                 <div class="text-sm text-gray-400 mb-1">Total Customers</div>
-                <div class="text-3xl font-bold">{{ "{:,}".format(total_customers) if total_customers else "0" }}</div>
+                <div class="text-3xl font-bold">N/A</div>
             </div>
             <div class="card rounded-xl p-6">
                 <div class="text-sm text-gray-400 mb-1">Top Store</div>
@@ -60,8 +60,11 @@
             <button onclick="showTab('overview')" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg bg-yellow-500 text-yellow-900" data-tab="overview">
                 Overview
             </button>
-            <button onclick="showTab('comparison')" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg bg-slate-800 text-gray-400 hover:text-white" data-tab="comparison">
-                Store Comparison
+            <button onclick="showTab('locations')" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg bg-slate-800 text-gray-400 hover:text-white" data-tab="locations">
+                All Locations
+            </button>
+            <button onclick="showTab('invoices')" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg bg-slate-800 text-gray-400 hover:text-white" data-tab="invoices">
+                Invoices
             </button>
             <button onclick="showTab('products')" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg bg-slate-800 text-gray-400 hover:text-white" data-tab="products">
                 Product Prices
@@ -91,7 +94,7 @@
                             </div>
                             <div class="text-right">
                                 <div class="text-green-400 font-semibold">${{ "{:,.0f}".format(store.total_sales) }}</div>
-                                <div class="text-xs text-gray-500">{{ "{:,}".format(store.total_customers) }} customers</div>
+                                <div class="text-xs text-gray-500">Data collection enabled</div>
                             </div>
                         </div>
                         {% endfor %}
@@ -117,12 +120,14 @@
                             {% for store in store_summary %}
                             <tr class="border-b border-white/5 hover:bg-white/5">
                                 <td class="py-3 px-2">
-                                    <div class="font-medium">{{ store.store_name }}</div>
+                                    <a href="/corporate/store/{{ store.store_id }}" class="font-medium text-yellow-500 hover:text-yellow-400 underline decoration-yellow-500/30">
+                                        {{ store.store_name }}
+                                    </a>
                                 </td>
-                                <td class="text-right py-3 px-2 text-green-400">${{ "{:,.0f}".format(store.total_sales) }}</td>
-                                <td class="text-right py-3 px-2">${{ "{:,.0f}".format(store.avg_sales) }}</td>
-                                <td class="text-right py-3 px-2">{{ "{:,}".format(store.total_customers) }}</td>
-                                <td class="text-right py-3 px-2">${{ "{:.2f}".format(store.total_sales / store.total_customers) if store.total_customers > 0 else "0.00" }}</td>
+                                <td class="text-right py-3 px-2 text-green-400">${{ "{:,.0f}".format(store.total_sales) if store.total_sales else 0 }}</td>
+                                <td class="text-right py-3 px-2">${{ "{:,.0f}".format(store.avg_sales) if store.avg_sales else 0 }}</td>
+                                <td class="text-right py-3 px-2">N/A</td>
+                                <td class="text-right py-3 px-2">N/A</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -131,39 +136,91 @@
             </div>
         </div>
 
-        <!-- Comparison Tab -->
-        <div id="comparison-tab" class="tab-content hidden">
+        <!-- All Locations Tab -->
+        <div id="locations-tab" class="tab-content hidden">
             <div class="card rounded-xl p-6">
-                <h2 class="text-lg font-semibold mb-4">Week Over Week Comparison</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold">All Locations Status</h2>
+                    <div class="text-sm text-gray-400">
+                        Report Date: <span class="text-white font-medium">{{ today }}</span>
+                    </div>
+                </div>
+
+                <!-- Summary Stats -->
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="bg-slate-800/50 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-white">{{ all_locations|length }}</div>
+                        <div class="text-xs text-gray-400">Total Locations</div>
+                    </div>
+                    <div class="bg-green-500/10 border border-green-500/30 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-green-400">{{ all_locations|selectattr('submitted_today')|list|length }}</div>
+                        <div class="text-xs text-gray-400">Submitted Today</div>
+                    </div>
+                    <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-yellow-400">{{ all_locations|rejectattr('submitted_today')|list|length }}</div>
+                        <div class="text-xs text-gray-400">Pending</div>
+                    </div>
+                </div>
+
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead>
                             <tr class="text-gray-400 border-b border-white/10">
                                 <th class="text-left py-3 px-2">Store</th>
-                                <th class="text-right py-3 px-2">This Week</th>
-                                <th class="text-right py-3 px-2">Last Week</th>
-                                <th class="text-right py-3 px-2">Change</th>
-                                <th class="text-right py-3 px-2">Trend</th>
+                                <th class="text-left py-3 px-2">Location</th>
+                                <th class="text-center py-3 px-2">Today's Status</th>
+                                <th class="text-right py-3 px-2">Last Report</th>
+                                <th class="text-right py-3 px-2">Last Net Sales</th>
+                                <th class="text-right py-3 px-2">Last Deposit</th>
+                                <th class="text-center py-3 px-2">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for row in week_comparison %}
-                            <tr class="border-b border-white/5">
-                                {% set change = ((row.this_week - row.last_week) / row.last_week * 100) if row.last_week > 0 else 0 %}
-                                <td class="py-3 px-2 font-medium">{{ row.store_name }}</td>
-                                <td class="text-right py-3 px-2">${{ "{:,.0f}".format(row.this_week) }}</td>
-                                <td class="text-right py-3 px-2">${{ "{:,.0f}".format(row.last_week) }}</td>
-                                <td class="text-right py-3 px-2 {% if change >= 0 %}positive{% else %}negative{% endif %}">
-                                    {{ "%.1f"|format(change) }}%
+                            {% for loc in all_locations %}
+                            <tr class="border-b border-white/5 hover:bg-white/5">
+                                <td class="py-3 px-2">
+                                    <div class="font-medium text-white">{{ loc.store_name.replace('Catfish King - ', '') }}</div>
+                                    <div class="text-xs text-gray-500">{{ loc.manager }}</div>
                                 </td>
-                                <td class="text-right py-3 px-2">
-                                    {% if change >= 5 %}
-                                    <span class="text-green-400">Strong</span>
-                                    {% elif change >= 0 %}
-                                    <span class="text-yellow-400">Stable</span>
+                                <td class="py-3 px-2 text-gray-400">{{ loc.location }}</td>
+                                <td class="py-3 px-2 text-center">
+                                    {% if loc.submitted_today %}
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-500/20 text-green-400 text-xs font-medium rounded-full">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                                        Submitted
+                                    </span>
                                     {% else %}
-                                    <span class="text-red-400">Down</span>
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs font-medium rounded-full">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg>
+                                        Pending
+                                    </span>
                                     {% endif %}
+                                </td>
+                                <td class="py-3 px-2 text-right font-mono text-sm">
+                                    {% if loc.last_report_date %}
+                                    <span class="text-white">{{ loc.last_report_date }}</span>
+                                    {% else %}
+                                    <span class="text-gray-500 italic">No reports</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3 px-2 text-right">
+                                    {% if loc.last_net_sales is not none %}
+                                    <span class="text-green-400 font-semibold">${{ "{:,.2f}".format(loc.last_net_sales) }}</span>
+                                    {% else %}
+                                    <span class="text-gray-500">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3 px-2 text-right">
+                                    {% if loc.last_deposit is not none %}
+                                    <span class="text-white">${{ "{:,.2f}".format(loc.last_deposit) }}</span>
+                                    {% else %}
+                                    <span class="text-gray-500">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3 px-2 text-center">
+                                    <a href="/corporate/store/{{ loc.store_id }}" class="text-yellow-500 hover:text-yellow-400 text-xs font-medium">
+                                        View Details →
+                                    </a>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -171,12 +228,81 @@
                     </table>
                 </div>
             </div>
+        </div>
 
-            <!-- Comparison Chart -->
-            <div class="card rounded-xl p-6 mt-8">
-                <h2 class="text-lg font-semibold mb-4">Store Comparison Chart</h2>
-                <div class="h-80">
-                    <canvas id="comparisonChart"></canvas>
+        <!-- Invoices Tab -->
+        <div id="invoices-tab" class="tab-content hidden">
+            <div class="card rounded-xl p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-lg font-semibold">Invoice Library</h2>
+                        <p class="text-sm text-gray-400 mt-1">View and manage vendor invoices across all locations</p>
+                    </div>
+                    <button onclick="alert('Invoice upload coming soon')" class="bg-yellow-500 hover:bg-yellow-400 text-yellow-900 font-semibold px-4 py-2 rounded-lg text-sm transition-colors">
+                        + Upload Invoice
+                    </button>
+                </div>
+
+                <!-- Filters -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Store</label>
+                        <select class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm focus:border-yellow-500 outline-none">
+                            <option value="">All Stores</option>
+                            {% for store in stores %}
+                            <option value="{{ store.id }}">{{ store.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Vendor</label>
+                        <select class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm focus:border-yellow-500 outline-none">
+                            <option value="">All Vendors</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Date Range</label>
+                        <input type="date" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm focus:border-yellow-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Status</label>
+                        <select class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm focus:border-yellow-500 outline-none">
+                            <option value="">All Statuses</option>
+                            <option value="pending">Pending Review</option>
+                            <option value="approved">Approved</option>
+                            <option value="paid">Paid</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Invoice Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-gray-400 border-b border-white/10">
+                                <th class="text-left py-3 px-2">Date</th>
+                                <th class="text-left py-3 px-2">Store</th>
+                                <th class="text-left py-3 px-2">Vendor</th>
+                                <th class="text-left py-3 px-2">Invoice #</th>
+                                <th class="text-right py-3 px-2">Amount</th>
+                                <th class="text-center py-3 px-2">Status</th>
+                                <th class="text-center py-3 px-2">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-white/5">
+                                <td colspan="7" class="py-12 text-center text-gray-500">
+                                    <div class="flex flex-col items-center gap-2">
+                                        <svg class="w-12 h-12 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        <div class="font-medium">No invoices uploaded yet</div>
+                                        <div class="text-xs">Store managers can upload invoices from their dashboard</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -272,41 +398,6 @@
                 scales: {
                     y: {
                         beginAtZero: true,
-                        grid: { color: 'rgba(255,255,255,0.1)' },
-                        ticks: { color: '#94a3b8', callback: v => '$' + (v/1000).toFixed(0) + 'K' }
-                    },
-                    x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
-                }
-            }
-        });
-
-        // Comparison chart
-        const compCtx = document.getElementById('comparisonChart').getContext('2d');
-        const compData = {{ week_comparison | tojson | safe }};
-
-        new Chart(compCtx, {
-            type: 'bar',
-            data: {
-                labels: compData.map(d => d.store_name.replace('Catfish King - ', '')),
-                datasets: [
-                    {
-                        label: 'This Week',
-                        data: compData.map(d => d.this_week),
-                        backgroundColor: '#eab308'
-                    },
-                    {
-                        label: 'Last Week',
-                        data: compData.map(d => d.last_week),
-                        backgroundColor: '#475569'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: '#94a3b8' } } },
-                scales: {
-                    y: {
                         grid: { color: 'rgba(255,255,255,0.1)' },
                         ticks: { color: '#94a3b8', callback: v => '$' + (v/1000).toFixed(0) + 'K' }
                     },
