@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Catfish King Portal — Board Questions Answered</title>
+<style>
+  @page {
+    size: Letter;
+    margin: 0.6in 0.7in;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #1a202c;
+    line-height: 1.5;
+    font-size: 10.5pt;
+    background: white;
+  }
+  header {
+    border-bottom: 3px solid #c05621;
+    padding-bottom: 12px;
+    margin-bottom: 18px;
+  }
+  header h1 {
+    font-size: 18pt;
+    color: #c05621;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  header .subtitle {
+    font-size: 10pt;
+    color: #4a5568;
+    font-weight: 500;
+  }
+  header .meta {
+    font-size: 8.5pt;
+    color: #718096;
+    margin-top: 4px;
+  }
+  h2 {
+    font-size: 12.5pt;
+    color: #2d3748;
+    margin: 16px 0 6px 0;
+    font-weight: 700;
+    border-left: 4px solid #c05621;
+    padding-left: 8px;
+  }
+  h3 {
+    font-size: 11pt;
+    color: #2d3748;
+    margin: 12px 0 4px 0;
+    font-weight: 600;
+  }
+  p { margin: 6px 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0 12px 0;
+    font-size: 9.5pt;
+  }
+  th, td {
+    padding: 5px 8px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: top;
+  }
+  th {
+    background: #2d3748;
+    color: white;
+    font-weight: 600;
+    font-size: 9pt;
+  }
+  ul, ol { margin: 6px 0 6px 24px; }
+  li { margin: 3px 0; }
+  strong { color: #2d3748; }
+  .q-num {
+    display: inline-block;
+    background: #c05621;
+    color: white;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-right: 6px;
+    font-size: 10pt;
+  }
+  .highlight {
+    background: #fff5f0;
+    border-left: 4px solid #c05621;
+    padding: 8px 12px;
+    margin: 8px 0;
+    font-size: 10pt;
+  }
+  .no-break { page-break-inside: avoid; }
+  .summary-section {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+  }
+  @media print {
+    h2 { page-break-after: avoid; }
+    h3 { page-break-after: avoid; }
+    .no-break { page-break-inside: avoid; }
+    table { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Catfish King Operational Portal</h1>
+  <div class="subtitle">Board-Readiness Questions — Answered in Order</div>
+  <div class="meta">Prepared for: Clay Conditt, EVP · Prepared by: Joel Escoto, Piney Digital · July 7, 2026</div>
+</header>
+
+<p style="margin-bottom:14px;">Clay, thanks for the questions. I've answered them below in the same numbered order you asked them. The pricing structure and ownership model are designed to give the board maximum transparency: you own every account, you pay providers directly, and Piney Digital bills a flat $150/month for support starting one month after Phase 4 is delivered.</p>
+
+<h2><span class="q-num">1</span>What ongoing monthly or annual costs should we expect once the website is up and running?</h2>
+
+<p>You asked for the breakdown, so here's exactly what the cost structure looks like. There are three pieces: the build, the first month of free support, and the long-term support retainer.</p>
+
+<p><strong>Phase 1–4 Build ($20,000, fixed):</strong> All 10 modules, 11 stores, full DataCache migration. Includes debugging, small UI tweaks, and any minor adjustments that come up during the build. No additional charges during the 12-week build period.</p>
+
+<p><strong>1 month free after build completion:</strong> Once Phase 4 is delivered, the first month is on me. Onboarding, training, manager questions, settling-in issues — all included at no charge. Take the time your team needs.</p>
+
+<p><strong>$150/month support retainer (starting month 2 after delivery):</strong> Predictable, flat-rate support. Cancel anytime with 30 days notice. No long-term contract.</p>
+
+<p><strong>Plus, infrastructure costs (paid by you directly to providers, not through me):</strong></p>
+
+<table>
+  <thead>
+    <tr><th>Line Item</th><th>Who Pays</th><th>Monthly</th><th>Annual</th><th>What It Is</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Server (VPS at DigitalOcean or Hetzner)</td><td>You → provider</td><td>$24</td><td>$288</td><td>The "computer" the portal runs on</td></tr>
+    <tr><td>Database (PostgreSQL on the VPS)</td><td>You → provider</td><td>$0</td><td>$0</td><td>The "filing cabinet" for your data</td></tr>
+    <tr><td>File &amp; document storage (Backblaze B2)</td><td>You → provider</td><td>$20</td><td>$240</td><td>PDFs, photos, schedules, invoices</td></tr>
+    <tr><td>Email notifications (Postmark or Amazon SES)</td><td>You → provider</td><td>$5</td><td>$60</td><td>Password resets, submission confirmations</td></tr>
+    <tr><td>Domain registration (Namecheap, etc.)</td><td>You → registrar</td><td>~$1</td><td>$15</td><td>The address (portal.greatamericanfoods.com)</td></tr>
+    <tr><td><strong>Total infrastructure (paid by you)</strong></td><td></td><td><strong>~$50/mo</strong></td><td><strong>~$600/yr</strong></td><td></td></tr>
+  </tbody>
+</table>
+
+<p>Two reasons for this structure. First, you asked for the breakdown — so the support fee and the infrastructure costs are now separate line items you can see and challenge. Second, the free month gives your team time to actually use the system before the support clock starts. If you'd rather have me bundle everything (one bill, $250/month) instead of paying providers separately, that's an option, but the unbundled version is cleaner for the board.</p>
+
+<h2><span class="q-num">2</span>How much storage do you think we would realistically need for 10 stores and the home office?</h2>
+
+<p>You were right that the sales and reporting data itself is small — text and numbers compress down to almost nothing. Here's the realistic breakdown for 10 stores + home office over 5 years:</p>
+
+<table>
+  <thead><tr><th>Data Type</th><th>Per Year</th><th>5-Year Total</th></tr></thead>
+  <tbody>
+    <tr><td>Sales / inventory / schedule data (structured)</td><td>~50 MB</td><td>250 MB</td></tr>
+    <tr><td>Uploaded documents (PDFs, Word, Excel, invoices, new-hire packets, write-ups)</td><td>30–50 GB</td><td>150–250 GB</td></tr>
+    <tr><td>Photos (occasional, e.g. equipment photos)</td><td>5–10 GB</td><td>25–50 GB</td></tr>
+    <tr><td><strong>TOTAL</strong></td><td><strong>~40–60 GB/year</strong></td><td><strong>~200–300 GB</strong></td></tr>
+  </tbody>
+</table>
+
+<p><strong>How quickly would those storage needs grow?</strong> Growth is steady but predictable. After 5 years you'd be at around 300 GB total. On Backblaze B2 (the storage provider we'd use), that runs about $20/month at our redundancy level. Even at 1 TB it'd be under $50/month. Storage will not be a meaningful cost line for you — and since you pay Backblaze directly, you see exactly what you're paying for.</p>
+
+<h2><span class="q-num">3</span>Would the hosting, database, and storage accounts be set up directly in Great American Foods' name, or would they be managed through you and billed back to us?</h2>
+
+<p><strong>Yes, in your name — this is the recommended setup, and it matches the pricing structure above.</strong></p>
+
+<p>Under this setup, the accounts are yours from day one:</p>
+<ul>
+  <li><strong>Great American Foods owns:</strong> the DigitalOcean (or similar) account, the domain registration, the database, the Backblaze B2 storage bucket, the email service account, and the GitHub repository</li>
+  <li><strong>Piney Digital has:</strong> delegated admin access during the build and support period, which you can revoke anytime</li>
+  <li><strong>You pay providers directly:</strong> DigitalOcean bills you, Backblaze bills you, etc. (~$50/month total)</li>
+  <li><strong>You pay me separately:</strong> just the $150/month support retainer (after the 1-month free period)</li>
+</ul>
+
+<p>The alternative is that I set up the accounts in Piney Digital's name, you pay me monthly, and I pass the hosting costs through to you with no markup (one bill, $250/month). Simpler bill, but the board may have lock-in concerns.</p>
+
+<h2><span class="q-num">4</span>What support is included after the website is completed?</h2>
+
+<p>The $150/month support retainer (starting one month after Phase 4 delivery) covers:</p>
+<ul>
+  <li><strong>Bug fixes</strong> — anything in the original scope, no charge</li>
+  <li><strong>Small UI changes</strong> — adjusting colors, layout, copy, field labels, form order, adding single fields</li>
+  <li><strong>Minor tweaks</strong> — small adjustments to reports, validations, dashboard widgets</li>
+  <li><strong>Security updates</strong> — applied within 48 hours of any critical patch</li>
+  <li><strong>Backups</strong> — automated nightly, 30-day retention, offsite (storage cost is on your Backblaze account; I configure and monitor the backup job)</li>
+  <li><strong>Login problems</strong> — password resets, locked accounts, new user setup</li>
+  <li><strong>Accidental deletion</strong> — restored from backup, usually within 1 business day</li>
+  <li><strong>"How do I…" questions</strong> — email support, response within 1 business day</li>
+  <li><strong>Server administration</strong> — OS updates, SSL certificate renewal, firewall management, monitoring alerts</li>
+</ul>
+
+<p><strong>What is NOT included</strong> (and how we'd handle it):</p>
+<ul>
+  <li><strong>Major incidents outside business hours</strong> (server down at 11pm Sunday): I'll provide best-effort support, but for guaranteed 24/7 incident response we'd add an after-hours retainer (~$200/month extra, optional)</li>
+  <li><strong>Data recovery from before the 30-day backup window:</strong> This shouldn't happen if backups are running, but if it does, recovery is billable at standard hourly rates</li>
+  <li><strong>New features, new modules, new report types</strong> (things beyond the original scope): Change Request process (see Q6)</li>
+  <li><strong>Server hardware upgrades:</strong> Since you own the VPS account, DigitalOcean bills you directly. If you need to upgrade to a bigger server (very unlikely in Year 1-2), that's your call and your bill, not mine.</li>
+  <li><strong>During the 12-week build period and the 1 free month after:</strong> All of the above is included at no charge, plus unlimited debugging and minor changes related to the build.</li>
+</ul>
+
+<h2><span class="q-num">5</span>Would there be a monthly maintenance or support fee? If not, would that work be billed hourly as needed?</h2>
+
+<p><strong>Yes, $150/month support retainer — but it doesn't start until one month after Phase 4 is delivered.</strong> The first month of post-launch support is free. During the 12-week build itself, all support is included in the $20,000 fixed price.</p>
+
+<p>The $150/month covers everything in Q4 above: bug fixes, small changes, security, backups, login help, and server admin. Cancel anytime with 30 days notice.</p>
+
+<p>If you'd rather not have a monthly support fee, the alternative is pay-as-you-go hourly support at $100/hour, with no minimum. Most months you'd pay $0. But the moment something breaks, you're paying for the triage, the fix, and the testing. Over a year, hourly almost always costs more than the $150/month plan, and you get worse response times.</p>
+
+<h2><span class="q-num">6</span>Is the $20,000 price fixed for the scope you outlined, or are there parts of the project that could increase the cost?</h2>
+
+<p><strong>The $20,000 covers exactly what the SOW describes (Section 3.1) — all 10 modules, 11 stores, full migration.</strong> That's a fixed-price contract. No surprise invoices, no "while we're at it" charges.</p>
+
+<p>The only things that can add cost are scope changes, and the SOW has a formal Change Request process for that (SOW Section 12):</p>
+<ol>
+  <li>You describe what you want changed</li>
+  <li>I respond within 3 business days with a fixed price for the change</li>
+  <li>Nothing happens until you sign off</li>
+  <li>We amend the SOW, you get billed separately for that change</li>
+</ol>
+
+<p><strong>Common examples that WOULD be a change request:</strong></p>
+<ul>
+  <li>Adding a 12th store</li>
+  <li>Building a new module not in the original 10</li>
+  <li>Integrating with your payroll or accounting system</li>
+  <li>Mobile native apps (iOS/Android)</li>
+  <li>A custom interface for a specific franchise partner</li>
+</ul>
+
+<p><strong>Common examples that would NOT be a change request (no extra cost):</strong></p>
+<ul>
+  <li>Fixing a bug</li>
+  <li>Adjusting colors or layout</li>
+  <li>Adding a single field to an existing form</li>
+  <li>Performance improvements</li>
+  <li>Security patches</li>
+</ul>
+
+<p>The board can take comfort in the fact that scope is locked, price is locked, and any growth is quoted in writing before work begins.</p>
+
+<h2><span class="q-num">7</span>Does the historical-data portion include the full migration of our existing DataCache information? What format would you need that information in, and could there be additional costs depending on how clean or usable the exported data is?</h2>
+
+<p><strong>Yes, full migration of up to 2 years is included in Phase 4 ($2,500).</strong> Format requirements:</p>
+<ul>
+  <li><strong>Preferred:</strong> CSV or Excel export from DataCache, one file per month per store</li>
+  <li><strong>Acceptable:</strong> Access to your DataCache account so I can pull the data directly</li>
+  <li><strong>Not workable:</strong> Scanned PDFs of paper reports (no machine-readable data)</li>
+</ul>
+
+<p>The "$2,500 fixed" assumes the data exports are reasonably clean — meaning fields are in the right columns, dates are formatted consistently, and totals reconcile. If the export is messy (missing fields, misaligned columns, different formats from different months), I'll quote a small surcharge for the extra cleanup time. I'll flag this within the first day of working with the data — no surprise invoices.</p>
+
+<p>In the worst case, cleanup runs about $300–$800 extra, and we'd agree on it in writing before starting.</p>
+
+<h2><span class="q-num">8</span>Who would own the website, source code, database, and uploaded documents once the project is completed?</h2>
+
+<p><strong>You own everything. This is in the SOW (Section 5).</strong></p>
+
+<p>Specifically, upon full payment for each Phase, Great American Foods owns:</p>
+<ul>
+  <li>All source code written for the portal</li>
+  <li>The database schema and the data inside it</li>
+  <li>All documentation</li>
+  <li>All UI/UX design</li>
+  <li>All uploaded documents (those are yours anyway)</li>
+</ul>
+
+<p><strong>What I retain:</strong> Generic code libraries and open-source components (which are also free for you to use, modify, or replace). And of course my own internal tools and know-how.</p>
+
+<p>This is a real "work for hire" assignment, not a license. If we part ways after Phase 4, you walk away with the code, the data, and the documentation. Nothing held hostage.</p>
+
+<h2><span class="q-num">9</span>Would we have full administrative access to the hosting, database, backups, source code, and account credentials?</h2>
+
+<p><strong>Yes. 100%.</strong> From the day the system launches, you have full administrative access to:</p>
+<ul>
+  <li>Hosting account (login, billing, resource management)</li>
+  <li>Database (read/write, schema view, backup history)</li>
+  <li>Backups (download any backup, any time)</li>
+  <li>Source code repository (GitHub or your own Git server, your choice)</li>
+  <li>Domain registration and DNS</li>
+  <li>All credentials and API keys</li>
+</ul>
+
+<p>I'd recommend putting these credentials in a sealed envelope with your CFO or in a password manager like 1Password. If I get hit by a bus tomorrow, your team can run the system without me.</p>
+
+<h2><span class="q-num">10</span>Would we be able to export all of our data and documents whenever needed without additional fees or having to rely on you to retrieve them?</h2>
+
+<p><strong>Yes. Anytime. No fees. No permission required.</strong> This is part of ownership.</p>
+
+<p>You can export:</p>
+<ul>
+  <li>All sales/inventory/schedule data (CSV, Excel, or JSON)</li>
+  <li>All uploaded documents (bulk ZIP download)</li>
+  <li>All backups (direct download from your hosting account)</li>
+</ul>
+
+<p>If you ever want to migrate to another developer or another platform, you don't need my permission or my involvement. The SOW explicitly grants this right (Section 13.1, confidentiality return-or-destroy clause, combined with Section 5.1 IP assignment).</p>
+
+<h2><span class="q-num">11</span>Are there any usage limits or additional charges based on the number of users, reports, uploaded files, storage, exports, or years of retained information?</h2>
+
+<p><strong>No hard usage limits in the standard plan.</strong> The $150/month support retainer covers:</p>
+<ul>
+  <li>Up to <strong>25 users</strong> (11 store managers + corporate team + district managers)</li>
+  <li>Up to <strong>500 GB of stored documents</strong> (you'd hit this in Year 5-7)</li>
+  <li><strong>Unlimited reports submitted</strong></li>
+  <li><strong>Unlimited exports</strong></li>
+  <li><strong>Unlimited data retention</strong> (within your storage tier)</li>
+</ul>
+
+<p>If you outgrow those (say, 50+ users or 1+ TB of data), we'd revisit the storage tier and the monthly fee would adjust accordingly. This is documented in the SOW (Section 10.1) and we'd agree on it before any change.</p>
+
+<h2><span class="q-num">12</span>What would it cost to add another store, report, or module in the future?</h2>
+
+<table>
+  <thead><tr><th>Add-On</th><th>Cost</th><th>Timeline</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Add another store</strong> (within 11-store scope)</td><td>$250 one-time setup + included in monthly</td><td>1 day</td></tr>
+    <tr><td><strong>Add a 12th+ store</strong></td><td>$400 one-time setup + $20/month</td><td>1-2 days</td></tr>
+    <tr><td><strong>Add a new report type</strong> (within existing module)</td><td>$300–$800 one-time</td><td>1 week</td></tr>
+    <tr><td><strong>Add a new module</strong> (Phase 5+ scope)</td><td>Quoted as a new phase</td><td>2-4 weeks</td></tr>
+  </tbody>
+</table>
+
+<p>These are estimates. Anything beyond the original scope goes through the formal Change Request process so you see the price before committing.</p>
+
+<h2><span class="q-num">13</span>If we ever needed to move the website to another developer or hosting provider, how difficult would that be, and what costs would be involved?</h2>
+
+<p><strong>Very doable. This was a design goal, not an afterthought.</strong></p>
+
+<p>The system is built on standard, well-known technologies:</p>
+<ul>
+  <li><strong>Backend:</strong> Python Flask (the most widely-used Python web framework)</li>
+  <li><strong>Database:</strong> SQLite or PostgreSQL (both industry standards)</li>
+  <li><strong>Frontend:</strong> HTML + Tailwind CSS (no proprietary build tools)</li>
+  <li><strong>File storage:</strong> Standard filesystem or S3-compatible</li>
+</ul>
+
+<p>Any competent web developer (in-house or contracted) can pick this up. A migration would typically cost <strong>$2,000–$5,000</strong> for another developer to:</p>
+<ul>
+  <li>Stand up the system on your new hosting provider</li>
+  <li>Import your data and documents</li>
+  <li>Configure your domain and email</li>
+  <li>Walk through the codebase with your team</li>
+</ul>
+
+<p>You'd also need a developer for ongoing maintenance after that — but you'd have full source code and credentials, so you can shop around for whoever you want.</p>
+
+<div class="summary-section">
+<h3>5-Year Cost Summary (for the Board)</h3>
+<table>
+  <thead><tr><th>Year</th><th>Build Cost</th><th>To Providers</th><th>To Piney Digital</th><th>Annual Total</th></tr></thead>
+  <tbody>
+    <tr><td>Year 1 (Phases 1–4 + 1 free month)</td><td>$20,000</td><td>$600</td><td>$0 (free)</td><td><strong>$20,600</strong></td></tr>
+    <tr><td>Year 2</td><td>—</td><td>$600</td><td>$1,650 ($150 × 11)</td><td><strong>$2,250</strong></td></tr>
+    <tr><td>Year 3</td><td>—</td><td>$600</td><td>$1,800</td><td><strong>$2,400</strong></td></tr>
+    <tr><td>Year 4</td><td>—</td><td>$720 (storage growth)</td><td>$1,800</td><td><strong>$2,520</strong></td></tr>
+    <tr><td>Year 5</td><td>—</td><td>$720</td><td>$1,800</td><td><strong>$2,520</strong></td></tr>
+    <tr style="background:#fed7aa;font-weight:700;"><td>5-YEAR TOTAL</td><td>$20,000</td><td>$3,240</td><td>$7,050</td><td><strong>$30,290</strong></td></tr>
+  </tbody>
+</table>
+<p style="margin-top:8px;font-size:9.5pt;">Payback period: ~7 months. Saves $30,000+/year vs. current paper process. Detailed cost breakdown on next page →</p>
+</div>
+
+<p style="margin-top:16px;font-size:9.5pt;color:#718096;text-align:center;">For full legal terms, see the attached SOW v3.1. For the 1-page board summary, see the attached 5-year cost projection.</p>
+
+</body>
+</html>

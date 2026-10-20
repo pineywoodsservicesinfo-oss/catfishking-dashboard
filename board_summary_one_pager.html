@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Catfish King Operational Portal — 5-Year Cost Summary for the Board</title>
+<style>
+  @page {
+    size: Letter;
+    margin: 0.5in;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #1a202c;
+    line-height: 1.25;
+    font-size: 9pt;
+    background: white;
+  }
+  .page {
+    max-width: 7.5in;
+    margin: 0 auto;
+    padding: 0.15in;
+  }
+  header {
+    border-bottom: 3px solid #c05621;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+  }
+  header h1 {
+    font-size: 15pt;
+    color: #c05621;
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  header .subtitle {
+    font-size: 9pt;
+    color: #4a5568;
+    font-weight: 500;
+  }
+  header .meta {
+    font-size: 7.5pt;
+    color: #718096;
+    margin-top: 3px;
+  }
+  h2 {
+    font-size: 10.5pt;
+    color: #2d3748;
+    margin: 10px 0 5px 0;
+    font-weight: 700;
+    border-left: 3px solid #c05621;
+    padding-left: 6px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8px;
+    font-size: 8.5pt;
+  }
+  th, td {
+    padding: 3px 6px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  th {
+    background: #2d3748;
+    color: white;
+    font-weight: 600;
+    font-size: 8pt;
+  }
+  tr.total td {
+    background: #fed7aa;
+    font-weight: 700;
+    border-top: 2px solid #c05621;
+    border-bottom: 2px solid #c05621;
+  }
+  .highlight-box {
+    background: #fff5f0;
+    border-left: 4px solid #c05621;
+    padding: 6px 10px;
+    margin: 6px 0;
+    font-size: 8.5pt;
+  }
+  .highlight-box strong { color: #c05621; }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 6px 0;
+  }
+  .card {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 6px 10px;
+  }
+  .card h3 {
+    font-size: 9pt;
+    color: #2d3748;
+    margin-bottom: 4px;
+    font-weight: 700;
+  }
+  .card ul {
+    list-style: none;
+    font-size: 7.5pt;
+    color: #4a5568;
+  }
+  .card li {
+    padding: 1px 0 1px 12px;
+    position: relative;
+  }
+  .card li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #38a169;
+    font-weight: 700;
+  }
+  .card.no li::before {
+    content: "—";
+    color: #a0aec0;
+  }
+  .footer {
+    margin-top: 10px;
+    padding-top: 6px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 7pt;
+    color: #718096;
+    text-align: center;
+  }
+  .compare-table {
+    background: #f0fff4;
+    border: 1px solid #9ae6b4;
+  }
+  .compare-table .total-row {
+    background: #c6f6d5;
+    font-weight: 700;
+  }
+  .pill {
+    display: inline-block;
+    background: #c05621;
+    color: white;
+    font-size: 7pt;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 8px;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+  .year-table th { background: #2d3748; }
+  .year-table td.amount { text-align: right; font-variant-numeric: tabular-nums; }
+  .year-table th.amount { text-align: right; }
+  @media print {
+    body { font-size: 9pt; }
+    .page { padding: 0; }
+    h2 { page-break-after: avoid; }
+    table { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <h1>Catfish King Operational Portal <span class="pill">BOARD SUMMARY</span></h1>
+  <div class="subtitle">Replacing DataCache with an owned system for 11 restaurant locations</div>
+  <div class="meta">Prepared for: Clay Conditt, EVP · Prepared by: Joel Escoto, Piney Digital · July 6, 2026</div>
+</header>
+
+<h2>5-Year Cost of Ownership (You Own Every Account)</h2>
+<table class="year-table">
+  <thead>
+    <tr>
+      <th>Year</th>
+      <th>Build Cost</th>
+      <th>To Providers<br><span style="font-size:7pt;font-weight:400;">(VPS, storage, email)</span></th>
+      <th>To Piney Digital<br><span style="font-size:7pt;font-weight:400;">(support retainer)</span></th>
+      <th class="amount">Annual Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Year 1</strong><br><span style="font-size:8pt;color:#718096;">Phases 1–4 + 1 free month</span></td>
+      <td>$20,000</td>
+      <td>$600<br><span style="font-size:8pt;color:#718096;">$50/mo × 12</span></td>
+      <td>$0<br><span style="font-size:8pt;color:#718096;">free during build + 1 month</span></td>
+      <td class="amount"><strong>$20,600</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Year 2</strong></td>
+      <td>—</td>
+      <td>$600</td>
+      <td>$1,650<br><span style="font-size:8pt;color:#718096;">$150 × 11 (after 1 free mo)</span></td>
+      <td class="amount"><strong>$2,250</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Year 3</strong></td>
+      <td>—</td>
+      <td>$600</td>
+      <td>$1,800<br><span style="font-size:8pt;color:#718096;">$150 × 12</span></td>
+      <td class="amount"><strong>$2,400</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Year 4</strong></td>
+      <td>—</td>
+      <td>$720<br><span style="font-size:8pt;color:#718096;">storage growth</span></td>
+      <td>$1,800</td>
+      <td class="amount"><strong>$2,520</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Year 5</strong></td>
+      <td>—</td>
+      <td>$720</td>
+      <td>$1,800</td>
+      <td class="amount"><strong>$2,520</strong></td>
+    </tr>
+    <tr class="total">
+      <td colspan="4"><strong>5-YEAR TOTAL</strong></td>
+      <td class="amount"><strong>$30,290</strong></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="highlight-box">
+  <strong>Phase 1 (pilot, 1–2 stores) is $9,500 to start</strong> and can be validated before committing to the remaining $10,500 (Phases 2–4). The 1-month free support starts after Phase 4 is delivered. $150/month begins month 2.
+</div>
+
+<h2>What's Included — $200/month Total After Stabilization</h2>
+<table>
+  <thead>
+    <tr><th>Line Item</th><th>Who Pays</th><th>Monthly</th><th>Annual</th><th>What It Is</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Server (DigitalOcean VPS)</td><td>You → DO</td><td>$24</td><td>$288</td><td>The "computer" the portal runs on</td></tr>
+    <tr><td>Database (PostgreSQL on VPS)</td><td>You → provider</td><td>$0</td><td>$0</td><td>The "filing cabinet" for sales, inventory, schedules</td></tr>
+    <tr><td>File &amp; document storage (Backblaze B2)</td><td>You → B2</td><td>$20</td><td>$240</td><td>PDFs, schedules, photos, invoices (≈300 GB at Year 5)</td></tr>
+    <tr><td>Backups (offsite, 30-day)</td><td>You → B2</td><td>(incl.)</td><td>(incl.)</td><td>Nightly snapshots, recoverable anytime</td></tr>
+    <tr><td>Email notifications (Postmark/SES)</td><td>You → provider</td><td>$5</td><td>$60</td><td>Password resets, submission confirmations</td></tr>
+    <tr><td>Domain registration</td><td>You → registrar</td><td>~$1</td><td>$15</td><td>The address (portal.greatamericanfoods.com)</td></tr>
+    <tr><td><strong>Piney Digital support retainer</strong></td><td>You → me</td><td><strong>$150</strong></td><td><strong>$1,800</strong></td><td>Bug fixes, small UI changes, security, login help, server admin</td></tr>
+    <tr class="total"><td>TOTAL</td><td></td><td>$200</td><td>$2,400</td><td>Predictable. No per-user fees. No per-report fees.</td></tr>
+  </tbody>
+</table>
+
+<div class="highlight-box">
+  <strong>How the timing works:</strong> $20,000 build over 12 weeks. 1 free month of support after delivery (onboarding, training, settling in). $150/month starts the month after that. Cancel anytime with 30 days notice.
+</div>
+
+<h2>What You Own at Completion</h2>
+<div class="grid">
+  <div class="card">
+    <h3>✓ Included — Always Yours</h3>
+    <ul>
+      <li>All source code for the portal</li>
+      <li>All data &amp; uploaded documents</li>
+      <li>Database schema, design, backups</li>
+      <li>Documentation &amp; user guides</li>
+      <li>Hosting account credentials</li>
+      <li>Domain registration &amp; admin access</li>
+      <li>Data export anytime, no fees, no permission</li>
+    </ul>
+  </div>
+  <div class="card no">
+    <h3>— Not Included (Optional Adds)</h3>
+    <ul>
+      <li>24/7 after-hours incident response (+$200/mo)</li>
+      <li>New feature development (quoted per change)</li>
+      <li>Mobile native apps (separate quote)</li>
+      <li>Payroll/accounting integration</li>
+      <li>POS hardware integration</li>
+    </ul>
+  </div>
+</div>
+
+<h2>What Happens If You Want to Leave Piney Digital</h2>
+<div class="highlight-box">
+  <strong>You can walk away with everything on day one.</strong> Standard technology (Python Flask, SQLite/PostgreSQL, HTML). Any developer can run it. Typical migration to another host or developer: <strong>$2,000–$5,000</strong>. No lock-in. No proprietary formats.
+</div>
+
+<h2>Return on Investment</h2>
+<table class="compare-table">
+  <thead>
+    <tr><th>Scenario</th><th>Annual Cost</th><th>Notes</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Current (DataCache + paper)</strong></td>
+      <td><strong>$35,000 – $50,000</strong></td>
+      <td>Paper, ink, manager hours, DataCache fees</td>
+    </tr>
+    <tr>
+      <td><strong>New system (Year 1)</strong></td>
+      <td><strong>$20,600</strong></td>
+      <td>$20k build + $600 to providers + $0 support (free)</td>
+    </tr>
+    <tr class="total-row">
+      <td><strong>New system (Year 2 onward)</strong></td>
+      <td><strong>~$2,400/year</strong></td>
+      <td>Flat. $600 providers + $1,800 support retainer.</td>
+    </tr>
+    <tr>
+      <td><strong>Annual savings (Year 2+)</strong></td>
+      <td><strong>$32,000 – $47,000</strong></td>
+      <td>5-year savings: $155,000 – $235,000</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="highlight-box" style="background:#f0fff4;border-left-color:#38a169;">
+  <strong>Payback period: ~7 months.</strong> Pays for itself in Year 1, saves $30,000+/year after. 5-year TCO: $30,290 vs. $175,000–$250,000 staying on the current path.
+</div>
+
+<h2>The Bottom Line for the Board</h2>
+<ul style="font-size:8.5pt; padding-left:18px;">
+  <li><strong>$20,000 one-time build, ~$2,400/year to operate</strong> — replaces a $35k–$50k/year paper problem</li>
+  <li><strong>You own every account</strong> — VPS, database, storage, email, domain, code, GitHub repo</li>
+  <li><strong>1 free month of support after delivery</strong> — onboarding, training, settling in</li>
+  <li><strong>$150/month flat support</strong> after that — bug fixes, small changes, security, server admin</li>
+  <li><strong>No lock-in</strong> — move to another developer or host anytime for $2,000–$5,000</li>
+  <li><strong>No markup on infrastructure</strong> — you pay DigitalOcean what DigitalOcean charges</li>
+  <li><strong>Predictable costs</strong> — fixed-price phases, no per-user fees, no surprise invoices</li>
+  <li><strong>Pilot option</strong> — start with $9,500 Phase 1, validate, then proceed</li>
+</ul>
+
+<div class="footer">
+  Detailed 5-year breakdown, scope of work, and full legal terms in: <strong>SOW_Catfish_King_FINAL.md</strong> · Questions: joel@pineydigital.com
+</div>
+
+</div>
+</body>
+</html>
