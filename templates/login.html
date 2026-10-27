@@ -58,6 +58,7 @@
                 </button>
             </form>
 
+            {% if demo_mode %}
             <div class="mt-6 pt-6 border-t border-white/10">
                 <p class="text-xs text-gray-400 text-center mb-3">Demo Accounts</p>
                 <div class="grid grid-cols-2 gap-2 text-xs">
@@ -72,6 +73,7 @@
                 </div>
                 <p class="text-xs text-gray-500 text-center mt-2">Password: demo1234</p>
             </div>
+            {% endif %}
         </div>
 
         <p class="text-center text-gray-500 text-xs mt-6">

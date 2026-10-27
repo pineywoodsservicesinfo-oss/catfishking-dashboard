@@ -6,11 +6,22 @@ Catfish King Corporate Dashboard
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import sqlite3
 import os
+import secrets
 from datetime import datetime, timedelta
-import random
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
+
+# Production (Railway) must have a real SECRET_KEY; local demo generates a
+# throwaway key so sessions don't rely on a committed string.
+IS_PROD = bool(os.environ.get('RAILWAY_ENVIRONMENT'))
+if IS_PROD and not os.environ.get('SECRET_KEY'):
+    raise RuntimeError('SECRET_KEY must be set in the Railway environment')
+app.secret_key = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
+app.config.update(
+    SESSION_COOKIE_SECURE=IS_PROD,   # HTTPS-only cookies in production
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',   # basic CSRF hardening
+)
 
 DATABASE = 'catfishking.db'
 
@@ -95,10 +106,20 @@ def init_db():
         -- Special
         special_deposit_dollars REAL DEFAULT 0,
         notes TEXT,
-        
+
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (store_id) REFERENCES stores(id)
     )''')
+
+    # Exactly one report per store per day — race-free upsert target for /store/upload
+    try:
+        c.execute("CREATE UNIQUE INDEX IF NOT EXISTS ux_daily_store_date ON daily_data(store_id, date)")
+    except sqlite3.OperationalError:
+        # Older DBs may hold duplicates from the pre-upsert code: keep the
+        # latest row per store/day, then create the index.
+        c.execute("""DELETE FROM daily_data WHERE id NOT IN (
+                     SELECT MAX(id) FROM daily_data GROUP BY store_id, date)""")
+        c.execute("CREATE UNIQUE INDEX IF NOT EXISTS ux_daily_store_date ON daily_data(store_id, date)")
 
     # Weekly data uploads
     c.execute('''CREATE TABLE IF NOT EXISTS weekly_data (
@@ -225,7 +246,9 @@ def login():
         else:
             error = "Invalid email or password"
 
-    return render_template('login.html', error=error)
+    # Demo credentials are advertised only in local demo mode, never in production
+    return render_template('login.html', error=error,
+                           demo_mode=os.environ.get('DEMO_MODE') == '1')
 
 
 @app.route('/logout')
@@ -254,15 +277,33 @@ def store_dashboard():
                  ORDER BY date DESC""", (store_id,))
     recent_data = c.fetchall()
 
-    # Get today's data if exists
+    # Selected filing date via ?date= for backfill; defaults to today.
     today = datetime.now().strftime('%Y-%m-%d')
+    requested = request.args.get('date', '')
+    try:
+        report_date = datetime.strptime(requested, '%Y-%m-%d').strftime('%Y-%m-%d')
+    except ValueError:
+        report_date = today
+    if report_date > today:
+        report_date = today
+
     c.execute("SELECT * FROM daily_data WHERE store_id = ? AND date = ?", (store_id, today))
+    today_record = c.fetchone()
+
+    # Selected filing date's record — used to prefill the form
+    c.execute("SELECT * FROM daily_data WHERE store_id = ? AND date = ?", (store_id, report_date))
     today_data = c.fetchone()
 
     # Calculate week totals using total_net_sales
     week_total = sum(row['total_net_sales'] for row in recent_data)
-    week_customers = sum(row['inside_voids_count'] for row in recent_data) # Placeholder since customers field was removed from schema
-    avg_check = week_total / week_customers if week_customers > 0 else 0
+    week_deposits = sum(row['total_deposit'] for row in recent_data)
+    avg_daily = week_total / 7
+
+    # Most recent report of any age, for the empty-state copy
+    c.execute("""SELECT date FROM daily_data WHERE store_id = ?
+                 ORDER BY date DESC LIMIT 1""", (store_id,))
+    last_report_row = c.fetchone()
+    last_report_date = last_report_row['date'] if last_report_row else None
 
     # Convert Row objects to dicts for JSON
     recent_data = [dict(row) for row in recent_data]
@@ -275,10 +316,15 @@ def store_dashboard():
                          store=store,
                          recent_data=recent_data,
                          today_data=today_data,
+                         today_record=today_record,
                          today=today,
+                         report_date=report_date,
                          week_total=week_total,
-                         week_customers=week_customers,
-                         avg_check=avg_check)
+                         week_deposits=week_deposits,
+                         avg_daily=avg_daily,
+                         last_report_date=last_report_date,
+                         submitted=request.args.get('success'),
+                         error=request.args.get('error'))
 
 
 @app.route('/store/upload', methods=['POST'])
@@ -288,66 +334,86 @@ def upload_data():
         return redirect(url_for('corporate_dashboard'))
 
     store_id = session.get('store_id')
-    date = request.form.get('date')
-    
+
+    # Filing date: validated server-side; future dates or garbage clamp to today
+    today = datetime.now().strftime('%Y-%m-%d')
+    try:
+        date = datetime.strptime(request.form.get('date', ''), '%Y-%m-%d').strftime('%Y-%m-%d')
+    except ValueError:
+        return redirect(url_for('store_dashboard', error='invalid_date'))
+    if date > today:
+        date = today
+
+    # Safe numeric parsing: blank means 0; malformed values reject the submission
+    bad_fields = []
+
+    def money(key):
+        raw = request.form.get(key, '')
+        if raw is None or not str(raw).strip():
+            return 0.0
+        try:
+            return float(raw)
+        except ValueError:
+            bad_fields.append(key)
+            return 0.0
+
+    def count(key):
+        return round(money(key))
+
     # Collect all 35+ fields from the form
     data = {
-        'inside_open_2pm': float(request.form.get('inside_open_2pm', 0)),
-        'drive_thru_open_2pm': float(request.form.get('drive_thru_open_2pm', 0)),
-        'inside_open_4pm': float(request.form.get('inside_open_4pm', 0)),
-        'drive_thru_open_4pm': float(request.form.get('drive_thru_open_4pm', 0)),
-        'total_gross_sales': float(request.form.get('total_gross_sales', 0)),
-        'tax_exempt_sales': float(request.form.get('tax_exempt_sales', 0)),
-        'gift_certs_redeemed': float(request.form.get('gift_certs_redeemed', 0)),
-        'cash_paid_outs': float(request.form.get('cash_paid_outs', 0)),
-        'credit_card_sales': float(request.form.get('credit_card_sales', 0)),
-        'online_sales': float(request.form.get('online_sales', 0)),
-        'delivery_sales': float(request.form.get('delivery_sales', 0)),
-        'charge_sales': float(request.form.get('charge_sales', 0)),
-        'cash_held_back_friday': float(request.form.get('cash_held_back_friday', 0)),
-        'cash_put_back_sunday': float(request.form.get('cash_put_back_sunday', 0)),
-        'deposit_1': float(request.form.get('deposit_1', 0)),
-        'deposit_2': float(request.form.get('deposit_2', 0)),
-        'deposit_3': float(request.form.get('deposit_3', 0)),
-        'total_deposit': float(request.form.get('total_deposit', 0)),
-        'cash_over_short': float(request.form.get('cash_over_short', 0)),
-        'sales_tax': float(request.form.get('sales_tax', 0)),
-        'total_net_sales': float(request.form.get('total_net_sales', 0)),
-        'inside_voids_count': int(request.form.get('inside_voids_count', 0)),
-        'inside_voids_dollars': float(request.form.get('inside_voids_dollars', 0)),
-        'dt_voids_count': int(request.form.get('dt_voids_count', 0)),
-        'dt_voids_dollars': float(request.form.get('dt_voids_dollars', 0)),
-        'total_voids_count': int(request.form.get('total_voids_count', 0)),
-        'total_voids_dollars': float(request.form.get('total_voids_dollars', 0)),
-        'gc_sold_count': int(request.form.get('gc_sold_count', 0)),
-        'gc_sold_dollars': float(request.form.get('gc_sold_dollars', 0)),
-        'special_deposit_dollars': float(request.form.get('special_deposit_dollars', 0)),
+        'inside_open_2pm': money('inside_open_2pm'),
+        'drive_thru_open_2pm': money('drive_thru_open_2pm'),
+        'inside_open_4pm': money('inside_open_4pm'),
+        'drive_thru_open_4pm': money('drive_thru_open_4pm'),
+        'total_gross_sales': money('total_gross_sales'),
+        'tax_exempt_sales': money('tax_exempt_sales'),
+        'gift_certs_redeemed': money('gift_certs_redeemed'),
+        'cash_paid_outs': money('cash_paid_outs'),
+        'credit_card_sales': money('credit_card_sales'),
+        'online_sales': money('online_sales'),
+        'delivery_sales': money('delivery_sales'),
+        'charge_sales': money('charge_sales'),
+        'cash_held_back_friday': money('cash_held_back_friday'),
+        'cash_put_back_sunday': money('cash_put_back_sunday'),
+        'deposit_1': money('deposit_1'),
+        'deposit_2': money('deposit_2'),
+        'deposit_3': money('deposit_3'),
+        'total_deposit': money('total_deposit'),
+        'cash_over_short': money('cash_over_short'),
+        'sales_tax': money('sales_tax'),
+        'total_net_sales': money('total_net_sales'),
+        'inside_voids_count': count('inside_voids_count'),
+        'inside_voids_dollars': money('inside_voids_dollars'),
+        'dt_voids_count': count('dt_voids_count'),
+        'dt_voids_dollars': money('dt_voids_dollars'),
+        'total_voids_count': count('total_voids_count'),
+        'total_voids_dollars': money('total_voids_dollars'),
+        'gc_sold_count': count('gc_sold_count'),
+        'gc_sold_dollars': money('gc_sold_dollars'),
+        'special_deposit_dollars': money('special_deposit_dollars'),
         'notes': request.form.get('notes', '')
     }
+
+    if bad_fields:
+        return redirect(url_for('store_dashboard', date=date, error='invalid_numbers'))
 
     conn = get_db()
     c = conn.cursor()
 
-    c.execute("SELECT id FROM daily_data WHERE store_id = ? AND date = ?", (store_id, date))
-    existing = c.fetchone()
-
-    if existing:
-        # Dynamic Update
-        set_clause = ", ".join([f"{k} = ?" for k in data.keys()])
-        values = list(data.values()) + [store_id, date]
-        c.execute(f"UPDATE daily_data SET {set_clause} WHERE store_id = ? AND date = ?", values)
-    else:
-        # Dynamic Insert
-        cols = ", ".join(data.keys())
-        placeholders = ", ".join(["?" for _ in data])
-        values = list(data.values())
-        c.execute(f"INSERT INTO daily_data (store_id, date, {cols}) VALUES (?, ?, {placeholders})",
-                  (store_id, date, *values))
+    # One row per store per day: insert or overwrite in a single statement
+    keys = list(data.keys())
+    cols = ", ".join(['store_id', 'date'] + keys)
+    placeholders = ", ".join(["?"] * (len(keys) + 2))
+    updates = ", ".join(f"{k} = excluded.{k}" for k in keys)
+    c.execute(f"""INSERT INTO daily_data ({cols}) VALUES ({placeholders})
+                  ON CONFLICT(store_id, date) DO UPDATE SET {updates}""",
+              [store_id, date] + list(data.values()))
 
     conn.commit()
     conn.close()
 
-    return redirect(url_for('store_dashboard', success=True))
+    return redirect(url_for('store_dashboard', date=date, success=True))
 
 
 @app.route('/corporate')
@@ -396,9 +462,7 @@ def corporate_dashboard():
 
     store_summary = store_summary_list
 
-    # Get week over week comparison
-    # Removed for now as it's not a core requirement for Clay's prototype.
-    week_comparison = []
+    # Week-over-week comparison: removed — keep corporate lean (all-locations covers it)
 
     # Get product price comparison
     c.execute("""SELECT product_name, unit,
@@ -421,7 +485,7 @@ def corporate_dashboard():
 
     # Calculate header stats
     total_sales = sum(row['total_sales'] for row in store_summary)
-    total_customers = 0 # customers field was removed from schema
+    reports_30d = sum(row['total_entries'] for row in store_summary)
     avg_daily = total_sales / 30 if daily_totals else 0
     top_store = store_summary[0]['store_name'] if store_summary else None
 
@@ -459,18 +523,16 @@ def corporate_dashboard():
 
     # Convert Row objects to dicts for JSON serialization
     store_summary = [dict(row) for row in store_summary]
-    week_comparison = [dict(row) for row in week_comparison]
     product_comparison = [dict(row) for row in product_comparison]
     daily_totals = [dict(row) for row in daily_totals]
 
     return render_template('corporate_dashboard.html',
                          stores=stores,
                          store_summary=store_summary,
-                         week_comparison=week_comparison,
                          product_comparison=product_comparison,
                          daily_totals=daily_totals,
                          total_sales=total_sales,
-                         total_customers=total_customers,
+                         reports_30d=reports_30d,
                          avg_daily=avg_daily,
                          top_store=top_store,
                          all_locations=all_locations,
@@ -507,5 +569,8 @@ def store_report_view(store_id):
 init_db()
 
 if __name__ == '__main__':
+    # Local runs are demo mode: the login page may show the demo logins.
+    # Production (gunicorn via Procfile) never sets this.
+    os.environ.setdefault('DEMO_MODE', '1')
     port = int(os.environ.get('PORT', 5001))
     app.run(host='0.0.0.0', port=port, debug=False)

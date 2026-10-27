@@ -46,8 +46,8 @@
                 <div class="text-3xl font-bold">${{ "{:,.0f}".format(avg_daily) if avg_daily else "0" }}</div>
             </div>
             <div class="card rounded-xl p-6">
-                <div class="text-sm text-gray-400 mb-1">Total Customers</div>
-                <div class="text-3xl font-bold">N/A</div>
+                <div class="text-sm text-gray-400 mb-1">Reports Filed (30 days)</div>
+                <div class="text-3xl font-bold">{{ reports_30d }}</div>
             </div>
             <div class="card rounded-xl p-6">
                 <div class="text-sm text-gray-400 mb-1">Top Store</div>
@@ -112,8 +112,7 @@
                                 <th class="text-left py-3 px-2">Store</th>
                                 <th class="text-right py-3 px-2">Total Sales</th>
                                 <th class="text-right py-3 px-2">Avg Daily</th>
-                                <th class="text-right py-3 px-2">Customers</th>
-                                <th class="text-right py-3 px-2">Avg Check</th>
+                                <th class="text-right py-3 px-2">Reports Filed</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -126,8 +125,7 @@
                                 </td>
                                 <td class="text-right py-3 px-2 text-green-400">${{ "{:,.0f}".format(store.total_sales) if store.total_sales else 0 }}</td>
                                 <td class="text-right py-3 px-2">${{ "{:,.0f}".format(store.avg_sales) if store.avg_sales else 0 }}</td>
-                                <td class="text-right py-3 px-2">N/A</td>
-                                <td class="text-right py-3 px-2">N/A</td>
+                                <td class="text-right py-3 px-2">{{ store.total_entries }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
